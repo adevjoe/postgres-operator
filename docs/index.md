@@ -1,75 +1,52 @@
-<h1>Concepts</h1>
+<h1>概念</h1>
 
-The Postgres [operator](https://coreos.com/blog/introducing-operators.html)
-manages PostgreSQL clusters on Kubernetes (K8s):
+Postgres [operator](https://coreos.com/blog/introducing-operators.html)
+用于在 Kubernetes (K8s) 上管理 PostgreSQL 集群:
 
-1. The operator watches additions, updates, and deletions of PostgreSQL cluster
-   manifests and changes the running clusters accordingly.  For example, when a
-   user submits a new manifest, the operator fetches that manifest and spawns a
-   new Postgres cluster along with all necessary entities such as K8s
-   StatefulSets and Postgres roles.  See this
-   [Postgres cluster manifest](../manifests/complete-postgres-manifest.yaml)
-   for settings that a manifest may contain.
+1. 该 operator 监听 PostgreSQL 集群清单文件的创建、更新、删除并更新运行中的集群。例如, 当用户提交了一个新的清单文件，operator 获取到清单文件并创建一个新的 Postgres 集群和一些 K8s StatefulSets、Postgres 角色等必要的资源实体。查看这些
+   [Postgres 清单文件](../manifests/complete-postgres-manifest.yaml) 可以了解涵盖的配置。
 
-2. The operator also watches updates to [its own configuration](../manifests/configmap.yaml)
-   and alters running Postgres clusters if necessary.  For instance, if the
-   Docker image in a pod is changed, the operator carries out the rolling
-   update, which means it re-spawns pods of each managed StatefulSet one-by-one
-   with the new Docker image.
+2. 该 operator 也监听 [它自身配置文件](../manifests/configmap.yaml) 的更新并且在必要的情况下更新运行中的集群。对于实例，如果 pod 中的镜像修改了，operator 会执行滚动更新，这将意味着它会一个一个地重新生成 StatefulSet 中的 pod，并使用新的镜像。
 
-3. Finally, the operator periodically synchronizes the actual state of each
-   Postgres cluster with the desired state defined in the cluster's manifest.
+3. 最终，该 operator 会周期性地同步每个 Postgres 集群的状态，把真实状态同步至清单文件中定义的期望状态。
 
-4. The operator aims to be hands free as configuration works only via manifests.
-   This enables easy integration in automated deploy pipelines with no access to
-   K8s directly.
+4. 该 operator 旨在让用户无需操作即可管理集群，且仅仅通过清单文件进行配置相关工作。这样就可以轻松集成到自动部署流水线中，而无需直接访问 K8s。
 
-## Scope
+## 范围
 
-The scope of the Postgres Operator is on provisioning, modifying configuration
-and cleaning up Postgres clusters that use Patroni, basically to make it easy
-and convenient to run Patroni based clusters on K8s. The provisioning
-and modifying includes K8s resources on one side but also e.g. database
-and role provisioning once the cluster is up and running. We try to leave as
-much work as possible to K8s and to Patroni where it fits, especially
-the cluster bootstrap and high availability. The operator is however involved
-in some overarching orchestration, like rolling updates to improve the user
-experience.
+Postgres Operator 的职责在于维护, 更改配置和清理 Postgres 集群则使用 Patroni，
+operator 主要让 Patroni 运行在 K8s 集群上变得更简单、方便。operator 一方面维护和
+修改 K8s 资源，另一方面在数据库集群启动后或运行中，也维护数据库和数据库角色。我们尝试
+将尽可能多的工作留给适合的 K8s 和 Patroni，尤其是集群启动和高可用。但是，operator 
+会参与一些总体流程，例如滚动更新以改善用户体验。
 
-Monitoring or tuning Postgres is not in scope of the operator in the current
-state. However, with globally configurable sidecars we provide enough
-flexibility to complement it with other tools like [ZMON](https://opensource.zalando.com/zmon/),
-[Prometheus](https://prometheus.io/) or more Postgres specific options.
+当前，监控或调整 Postgres 不在 operator 的范围内。然而，通过全局 sidecars 配置，
+我们提供足够的灵活性去集成一些工具，比如 [ZMON](https://opensource.zalando.com/zmon/),
+[Prometheus](https://prometheus.io/) 或其它 Postgres 工具。
 
 
-## Overview of involved entities
+## 实体关系概览
 
-Here is a diagram, that summarizes what would be created by the operator, when a
-new Postgres cluster CRD is submitted:
+这幅图总结了在提交新的 Postgres 集群 CRD 时 operator 将创建的内容:
 
-![postgresql-operator](diagrams/operator.png "K8s resources, created by operator")
+![postgresql-operator](diagrams/operator.png "由 operator 创建的 K8s 资源")
 
-This picture is not complete without an overview of what is inside a single
-cluster pod, so let's zoom in:
+这幅图没有完全地展示单个集群 pod 中组件情况，让我们放大图片看看:
 
-![pod](diagrams/pod.png "Database pod components")
+![pod](diagrams/pod.png "数据库 pod 中的组件")
 
-These two diagrams should help you to understand the basics of what kind of
-functionality the operator provides.
+这两幅图可以帮助你了解 operator 提供的主要功能。
 
-## Status
+## 状态
 
-This project is currently in active development. It is however already
-[used internally by Zalando](https://jobs.zalando.com/tech/blog/postgresql-in-a-time-of-kubernetes/)
-in order to run Postgres clusters on K8s in larger numbers for staging
-environments and a growing number of production clusters. In this environment
-the operator is deployed to multiple K8s clusters, where users deploy
-manifests via our CI/CD infrastructure or rely on a slim user interface to
-create manifests.
+该项目仍然处于开发阶段。但是 [Zalando 内部]((https://jobs.zalando.com/tech/blog/postgresql-in-a-time-of-kubernetes/)) 已经在
+使用了，用来在 K8s 上运行大量的 Postgres 集群测试环境，生产环境也用的越来越多。
+在此环境中，operator 被部署到多个 K8s 集群，用户可以在其中通过我们的 CI/CD 
+基础架构，或依靠用户界面来创建清单。
 
-Please, report any issues discovered to https://github.com/zalando/postgres-operator/issues.
+请反馈任何任何遇到的问题到 https://github.com/zalando/postgres-operator/issues.
 
-## Talks
+## 演讲
 
 - "PostgreSQL on K8S at Zalando: Two years in production" talk by Alexander Kukushkin, FOSSDEM 2020: [video](https://fosdem.org/2020/schedule/event/postgresql_postgresql_on_k8s_at_zalando_two_years_in_production/) | [slides](https://fosdem.org/2020/schedule/event/postgresql_postgresql_on_k8s_at_zalando_two_years_in_production/attachments/slides/3883/export/events/attachments/postgresql_postgresql_on_k8s_at_zalando_two_years_in_production/slides/3883/PostgreSQL_on_K8s_at_Zalando_Two_years_in_production.pdf)
 
@@ -85,7 +62,7 @@ Please, report any issues discovered to https://github.com/zalando/postgres-oper
 
 - "Kube-Native Postgres" talk by Josh Berkus, KubeCon 2017: [video](https://www.youtube.com/watch?v=Zn1vd7sQ_bc)
 
-## Posts
+## 文章
 
 - "How to set up continuous backups and monitoring" by Pål Kristensen on [GitHub](https://github.com/zalando/postgres-operator/issues/858#issuecomment-608136253), Mar. 2020.
 
